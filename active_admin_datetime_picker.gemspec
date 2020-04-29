@@ -7,7 +7,7 @@ Gem::Specification.new do |spec|
   spec.email         = ["nikgotmail97@gmail.com"]
 
   spec.summary       = %q{Datetime Picker for Activeadmin}
-  spec.homepage      = "TODO: Put your gem's website or public repo URL here."
+  spec.homepage      = "https://github.com/NikhithaGraceJosh/activeadmin_datetime_picker"
   spec.required_ruby_version = Gem::Requirement.new(">= 2.3.0")
 
 
