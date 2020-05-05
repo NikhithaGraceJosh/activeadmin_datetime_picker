@@ -22,6 +22,22 @@ Or install it yourself as:
 
 ## Usage
 
+Code Sample
+
+f.input :column_name, as: :datetimepicker
+
+CSS
+In active_admin.scss, add the line,
+
+```css
+@import active_admin_datetime_picker
+```
+JS
+In active_admin.js, add the line,
+
+```js
+//= require datetimepicker
+```
 
 ## Development
 

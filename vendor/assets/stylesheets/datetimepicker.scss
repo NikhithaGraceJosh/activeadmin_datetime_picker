@@ -1,0 +1,21 @@
+
+.datepicker-container {
+    z-index: 2000;
+    position: absolute;
+    margin-left: 20%;
+    margin-top: 5px;
+    border: 1px solid black;
+    justify-content: center;
+    .header{
+        font-size: 1rem;
+        text-align: center;
+    }
+    table {
+        background: white;
+        thead{
+            th{
+                background: white;
+            }
+        }
+    }
+}
