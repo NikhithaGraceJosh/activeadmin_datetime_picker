@@ -24,7 +24,9 @@ Or install it yourself as:
 
 Code Sample
 
+```ruby
 f.input :column_name, as: :datetimepicker
+```
 
 CSS
 In active_admin.scss, add the line,
