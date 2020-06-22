@@ -1,44 +1,52 @@
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+const FULL_MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
-
+const FULL_DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 /* 
     Initialising variables that store the final date that the user picks
     Note:
-        finaldateDate is initialised to -1 so that if the user doesn't pick any date, the input field is left blank
+        finalDate.date is initialised to -1 so that if the user doesn't pick any date, the input field is left blank
 */
 
 let date = new Date()
-let finaldateMonth = date.getMonth();
-let finaldateYear = date.getFullYear();
-let finaldateDate = -1;
+let viewingDate = {
+    date: -1,
+    month: date.getMonth(),
+    year: date.getFullYear()
+}
+let finalDate = Object.assign({}, viewingDate)
 let time = date.toLocaleString('en-US', { hour: 'numeric', hour12: true }).split(' ')
 let finaltimeHour = time[0]
 let finaltimeMinute = date.getMinutes();
 let finaltimePeriod = time[1]
-
+let datetimepicker_options;
 $(function () {
 
+    //initialize datetimepicker options
+    options = $('.ui-datetime-picker-wrapper > .ui-datetime-picker-input').attr('datetimepicker_options')
+    datetimepicker_options = $.parseJSON(options)
+
     // give default values to the global variables depending on the value of the input field
-    if ($('.ui-datetime-picker-wrapper > .ui-datetime-picker-input').val() != "") {
-        let val = $('.ui-datetime-picker-wrapper > .ui-datetime-picker-input').val()
+    $.map($('.ui-datetime-picker-wrapper > .ui-datetime-picker-input'), function (d) {
+        if ($(d).val() != "") {
+            let val = $(d).val()
 
-        // for firefox browser
-        val = val.replace(' UTC', '')
+            // for firefox browser
+            val = val.replace(' UTC', '')
 
-        let date = new Date(val)
-        finaldateMonth = date.getMonth();
-        finaldateYear = date.getFullYear();
-        finaldateDate = date.getDate();
-        let time = date.toLocaleString('en-US', { hour: 'numeric', hour12: true }).split(' ')
-        finaltimeHour = time[0];
-        finaltimeMinute = date.getMinutes();
-        finaltimePeriod = time[1]
-
-        date = finaldateDate + " " + MONTHS[finaldateMonth] + " " + finaldateYear + " " + finaltimeHour + ":" + finaltimeMinute + " " + finaltimePeriod
-        $('.ui-datetime-picker-wrapper .ui-datetime-picker-input').val(new Date(date).toLocaleString('en-US', { hour12: true }))
-
-    }
-
+            date = new Date(val)
+            finalDate.month = date.getMonth();
+            finalDate.year = date.getFullYear();
+            finalDate.date = date.getDate();
+            let time = date.toLocaleString('en-US', { hour: 'numeric', hour12: true }).split(' ')
+            finaltimeHour = time[0];
+            finaltimeMinute = date.getMinutes();
+            finaltimePeriod = time[1]
+            viewingDate = Object.assign({}, finalDate)
+            let formatted_date = formatDate(viewingDate)
+            $(d).val(formatted_date)
+        }
+    })
     /*
         Binding event to all datepicker inputs
         On focus datetimepicker inputs, display datetime picker
@@ -57,59 +65,110 @@ $(function () {
     })
 
     $(document).on('click', '.datetimepicker-container .body.monthpicker .month-container div', function () {
-        //save the selected month value
-        finaldateMonth = $(this)[0].className
+        let min_date = new Date(datetimepicker_options['min_date'])
+        let max_date = new Date(datetimepicker_options['max_date'])
+        selected_month = parseInt($(this)[0].className)
+        if (selected_month > min_date.getMonth() && selected_month < max_date.getMonth()) {
+            //save the selected month value
+            finalDate.month = selected_month
+        }
+
+        viewingDate.month = selected_month
 
         // display calendar
-        displayCalendar(finaldateMonth, finaldateYear)
+        displayCalendar(selected_month, finalDate.year)
 
         //show footer
         $('.datetimepicker-container .footer').show()
     })
 
     $(document).on('click', '.datetimepicker-container .header.datepicker .previous-month', function () {
-        let selected_month = $('.datetimepicker-container .header.datepicker .select-month span')[0].className
-        // get the previous value of current month and save it
-        if (selected_month == 0) {
-            finaldateMonth = 11
-            finaldateYear = finaldateYear - 1
+        let current_month = $('.datetimepicker-container .header.datepicker .select-month span')[0].className
+        // get the previous value of current month
+        if (current_month == 0) {
+            previous_month = 11
+            previous_year = parseInt($('.select-year').text()) - 1
         }
         else {
-            finaldateMonth = selected_month - 1
+            previous_month = current_month - 1
+            previous_year = parseInt($('.select-year').text())
         }
 
+        // save the month and year
+        let min_date = new Date(datetimepicker_options['min_date'])
+        let max_date = new Date(datetimepicker_options['max_date'])
+        if (previous_month > min_date.getMonth() && previous_month < max_date.getMonth()) {
+            finalDate.month = previous_month
+        }
+        if (previous_year > min_date.getFullYear() && previous_year < max_date.getFullYear()) {
+            finalDate.year = previous_year
+        }
+
+        viewingDate.month = previous_month
+        viewingDate.year = previous_year
+
         // display calendar
-        displayCalendar(finaldateMonth, finaldateYear)
+        displayCalendar(viewingDate.month, viewingDate.year)
     })
 
     $(document).on('click', '.datetimepicker-container .header.datepicker .next-month', function () {
-        let selected_month = $('.datetimepicker-container .header.datepicker .select-month span')[0].className
-        // get the next value of current month and save it
-        if (selected_month == 11) {
-            finaldateMonth = 0
-            finaldateYear = finaldateYear + 1
+        let current_month = $('.datetimepicker-container .header.datepicker .select-month span')[0].className
+        // get the next value of current month
+        if (current_month == 11) {
+            next_month = 0
+            next_year = parseInt($('.select-year').text()) + 1
         } else {
-            finaldateMonth = parseInt(selected_month) + 1
+            next_month = parseInt(current_month) + 1
+            next_year = parseInt($('.select-year').text())
+        }
+        //save the month and year
+        let min_date = new Date(datetimepicker_options['min_date'])
+        let max_date = new Date(datetimepicker_options['max_date'])
+        if (next_month >= min_date.getMonth() && next_month <= max_date.getMonth()) {
+            finalDate.month = next_month
+        }
+        if (next_year >= min_date.getFullYear() && next_year <= max_date.getFullYear()) {
+            finalDate.year = next_year
         }
 
+        viewingDate.month = next_month
+        viewingDate.year = next_year
+
         // display calendar
-        displayCalendar(finaldateMonth, finaldateYear)
+        displayCalendar(viewingDate.month, viewingDate.year)
     })
 
     $(document).on('click', '.datetimepicker-container .header.datepicker .next-year', function () {
         let year = $('.datetimepicker-container .header.datepicker .select-year').text()
-        finaldateYear = parseInt(year) + 1
+        next_year = parseInt(year) + 1
+
+        //save the year
+        let min_date = new Date(datetimepicker_options['min_date'])
+        let max_date = new Date(datetimepicker_options['max_date'])
+        if (next_year >= min_date.getFullYear() && next_year <= max_date.getFullYear()) {
+            finalDate.year = next_year
+        }
+
+        viewingDate.year = next_year
 
         // display calendar
-        displayCalendar(finaldateMonth, finaldateYear)
+        displayCalendar(viewingDate.month, viewingDate.year)
     })
 
     $(document).on('click', '.datetimepicker-container .header.datepicker .previous-year', function () {
         let year = $('.datetimepicker-container .header.datepicker .select-year').text()
-        finaldateYear = parseInt(year) - 1
+        let previous_year = parseInt(year) - 1
 
+        //save the year
+        let min_date = new Date(datetimepicker_options['min_date'])
+        let max_date = new Date(datetimepicker_options['max_date'])
+        if (previous_year > min_date.getFullYear() && previous_year < max_date.getFullYear()) {
+            finalDate.year = previous_year
+        }
+
+        viewingDate.year = previous_year
         // display calendar
-        displayCalendar(finaldateMonth, finaldateYear)
+        displayCalendar(viewingDate.month, viewingDate.year)
     })
 
     $(document).on('click', '.datetimepicker-container .header.datepicker .select-year', function () {
@@ -121,11 +180,19 @@ $(function () {
     })
 
     $(document).on('click', '.datetimepicker-container .body.yearpicker .year-container div', function () {
-        //save selected year
-        finaldateYear = $(this).text()
+        //selected year
+        let selected_year = $(this).text()
 
+        //saved the selected year
+        let min_date = new Date(datetimepicker_options['min_date'])
+        let max_date = new Date(datetimepicker_options['max_date'])
+        if (selected_year > min_date.getFullYear() && selected_year < max_date.getFullYear()) {
+            finalDate.year = selected_year
+        }
+
+        viewingDate.year = selected_year
         //display calendar
-        displayCalendar(finaldateMonth, finaldateYear)
+        displayCalendar(viewingDate.month, viewingDate.year)
 
         //show footer
         $('.datetimepicker-container .footer').show()
@@ -239,20 +306,20 @@ $(function () {
     $(document)[0].addEventListener('click', function (e) {
         if ($('.ui-datetime-picker-wrapper').find($(e.target)).length == 0) {
             // set value of input field with selected date
-            if (!(finaldateDate == -1)) {
-                date = finaldateDate + " " + MONTHS[finaldateMonth] + " " + finaldateYear + " " + finaltimeHour + ":" + finaltimeMinute + " " + finaltimePeriod
-                $('.ui-datetime-picker-wrapper .ui-datetime-picker-input').val(new Date(date).toLocaleString('en-US', { hour12: true }))
+            if (!(finalDate.date == -1)) {
+                formatted_date = formatDate(finalDate)
+                $('.ui-datetime-picker-wrapper .ui-datetime-picker-input').val(formatted_date)
             }
             $('div.datetimepicker-container').remove()
         }
     }, true)
 
-    $(document).on('click', '.datetimepicker-container .body.datepicker table td', function () {
+    $(document).on('click', '.datetimepicker-container .body.datepicker table td:not(.disabled)', function () {
         // save selected date
         let date = $(this).text()
         $('.datetimepicker-container .body.datepicker table td').removeClass('selected')
         $(this).addClass('selected')
-        finaldateDate = date
+        finalDate.date = date
     })
 })
 
@@ -271,23 +338,48 @@ function initDateTimePicker(datetimepickerInputElement) {
                 </div>`
 
     $(datetimepickerInputElement).after(html)
-    displayCalendar(finaldateMonth, finaldateYear)
+    displayCalendar(finalDate.month, finalDate.year)
 }
 
 function displayCalendar(month, year) {
     let startingDayOfMonth = new Date(year, month, 1).getDay()
     let totalDaysInMonth = new Date(year, parseInt(month) + 1, 0).getDate()
-    fillHeaderCalendar(month, year)
-    fillBodyCalendar(startingDayOfMonth, totalDaysInMonth)
+    let min_full_date = new Date(datetimepicker_options["min_date"])
+    let max_full_date = new Date(datetimepicker_options["max_date"])
+    let min_date = -1
+    let max_date = totalDaysInMonth + 1
+    let disable_year = false
+    let disable_month = false
+    if (year < min_full_date.getFullYear()) {
+        min_date = totalDaysInMonth + 1
+    } else if (min_full_date.getFullYear() == year && month < min_full_date.getMonth()) {
+        min_date = totalDaysInMonth + 1
+    } else if (min_full_date.getMonth() == month && min_full_date.getFullYear() == year) {
+        min_date = min_full_date.getDate()
+    }
+    if (year > max_full_date.getFullYear()) {
+        // since the whole year is disabled and so are all the months
+        disable_year = true
+        disable_month = true
+        max_date = 0
+    } else if (max_full_date.getFullYear() == year && month > max_full_date.getMonth()) {
+        //since the whole month is disbaled, set the flag to true
+        disable_month = true
+        max_date = 0
+    } else if (max_full_date.getMonth() == month && max_full_date.getFullYear() == year) {
+        max_date = max_full_date.getDate()
+    }
+    fillHeaderCalendar(month, year, disable_month, disable_year)
+    fillBodyCalendar(startingDayOfMonth, totalDaysInMonth, min_date, max_date)
 }
 
-function fillHeaderCalendar(month, year) {
+function fillHeaderCalendar(month, year, disable_month, disable_year) {
     let html = `<div class="calendar">
                     <span class="month">
                         <span class="previous-month">
                             <i class="fa fa-chevron-left"></i>
                         </span>
-                        <span class="select-month">
+                        <span class="select-month ${disable_month ? "disabled" : ""}">
                             <span class="${month}">${MONTHS[month]}</span>
                         </span>
                         <span class="next-month">
@@ -298,7 +390,7 @@ function fillHeaderCalendar(month, year) {
                         <span class="previous-year">
                             <i class="fa fa-chevron-left"></i>
                         </span>
-                        <span class="select-year">${year}</span>
+                        <span class="select-year ${disable_year ? "disabled" : ""}">${year}</span>
                         <span class="next-year">
                             <i class="fa fa-chevron-right"></i>
                         </span>
@@ -308,7 +400,7 @@ function fillHeaderCalendar(month, year) {
     $('.datetimepicker-container .header.datepicker').html(html)
 }
 
-function fillBodyCalendar(day, total_days) {
+function fillBodyCalendar(day, total_days, min_date, max_date) {
     let i = 1;
     let html = `<table>
                     <thead>
@@ -322,11 +414,19 @@ function fillBodyCalendar(day, total_days) {
                 <tr>`
     $.each(DAYS, function (index, value) {
         if (index >= day) {
-            if (parseInt(finaldateDate) == i) {
-                html += `<td class="selected">${i}</td>`
+            if (parseInt(finalDate.date) == i) {
+                if (i < min_date || i > max_date) {
+                    html += `<td class="disabled">${i}</td>`
+                } else {
+                    html += `<td class="selected">${i}</td>`
+                }
 
             } else {
-                html += `<td>${i}</td>`
+                if (i < min_date || i > max_date) {
+                    html += `<td class="disabled">${i}</td>`
+                } else {
+                    html += `<td>${i}</td>`
+                }
             }
             i++;
         }
@@ -339,11 +439,19 @@ function fillBodyCalendar(day, total_days) {
         if ((x % 7 == 0) && (x != 0)) {
             html += `</tr><tr>`
         }
-        if (parseInt(finaldateDate) == i) {
-            html += `<td class="selected">${i}</td>`
+        if (parseInt(finalDate.date) == i) {
+            if (i < min_date || i > max_date) {
+                html += `<td class="disabled">${i}</td>`
+            } else {
+                html += `<td class="selected">${i}</td>`
+            }
 
         } else {
-            html += `<td>${i}</td>`
+            if (i < min_date || i > max_date) {
+                html += `<td class="disabled">${i}</td>`
+            } else {
+                html += `<td>${i}</td>`
+            }
         }
         i++
     }
@@ -373,8 +481,8 @@ function fillBodyMonthPicker() {
 }
 
 function displayYearPicker() {
-    let start_year = parseInt(finaldateYear) - 5
-    let end_year = parseInt(finaldateYear) + 6
+    let start_year = parseInt(finalDate.year) - 5
+    let end_year = parseInt(finalDate.year) + 6
     fillHeaderYearPicker(start_year, end_year)
     fillBodyYearPicker(start_year, end_year)
 }
@@ -415,7 +523,7 @@ function fillBodyYearPicker(start_year, end_year) {
 
     for (i = start_year; i <= end_year; i++) {
 
-        if (i == finaldateYear) {
+        if (i == finalDate.year) {
             html += `<div class="current-year ${i}"> ${i}</div>`
         } else {
             html += `<div class="${i}" > ${i}</div>`
@@ -435,7 +543,7 @@ function toggleDateTimePickers() {
 
     } else {
         //display datepicker
-        displayCalendar(finaldateMonth, finaldateYear)
+        displayCalendar(finalDate.month, finalDate.year)
 
         //toggle footer icon
         toggleFooterIcon()
@@ -518,4 +626,76 @@ function fillBodyMinutePicker() {
     }
     html += `</div>`
     $('.datetimepicker-container .body.minutepicker').html(html);
+}
+
+function formatDate(dateObject) {
+    let format = datetimepicker_options['format']
+    let token_regex = /%([d]{1,2}|[m]{1,2}|[y]{2,4}|[H]{1,2}|[h]{1,2}|[M]{1,2}|[S]{1,2}|[A,B,P,a,b,p])/gm
+    let new_date = format.replace(token_regex, function (a, b) {
+        switch (a) {
+            case '%d':
+                return dateObject.date
+            case '%dd':
+                if (dateObject.date < 10)
+                    return "0" + dateObject.date
+                else
+                    return dateObject.date
+            case '%m':
+                return dateObject.month
+            case '%mm':
+                if (dateObject.month < 10)
+                    return "0" + (dateObject.month + 1)
+                else
+                    return (dateObject.month + 1)
+            case '%yy':
+                return (dateObject.year % 100)
+            case '%yyyy':
+                return dateObject.year
+            case '%h':
+                return finaltimeHour
+            case '%hh':
+                if (finaltimeHour < 10)
+                    return "0" + finaltimeHour
+                else
+                    return finaltimeHour
+            case '%H':
+                return finaltimeHour
+            case '%HH':
+                return finaltimeHour
+            case '%M':
+                return finaltimeMinute
+            case '%MM':
+                if (finaltimeMinute < 10)
+                    return "0" + finaltimeMinute
+                else
+                    return finaltimeMinute
+            case '%S':
+                return date.getSeconds()
+            case '%SS':
+                if (date.getSeconds() < 10)
+                    return "0" + date.getSeconds()
+                else
+                    return date.getSeconds()
+            case '%P':
+                return finaltimePeriod
+                break
+            case '%p':
+                return finaltimePeriod.toLowerCase()
+                break
+            case '%a':
+                return DAYS[date.getDay()]
+                break
+            case '%A':
+                return FULL_DAYS[date.getDay()]
+                break
+            case '%b':
+                return MONTHS[dateObject.month]
+                break
+            case '%B':
+                return FULL_MONTHS[dateObject.month]
+                break
+        }
+    })
+    return new_date
+
 }
