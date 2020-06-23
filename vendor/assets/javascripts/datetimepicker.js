@@ -22,7 +22,8 @@ let finaltimePeriod = time[1]
 let default_options = {
     'min_date': -1,
     'max_date': -1,
-    'format': '%dd-%mm-%yyyy %hh:%MM:%SS %P'
+    'format': '%dd-%mm-%yyyy %hh:%MM:%SS %P',
+    'only_datepicker': false
 };
 let datetimepicker_options;
 $(function () {
@@ -336,13 +337,16 @@ function initDateTimePicker(datetimepickerInputElement) {
                     <div class="header">
                     </div>
                     <div class="body">
-                    </div>
-                    <div class="footer">
+                    </div>`
+    if (!(datetimepicker_options["only_datepicker"])) {
+        html += `<div class="footer">
                         <div class="toggle time">
                             <i class="far fa-clock"></i>
                         </div>
                     </div>
                 </div>`
+    }
+
 
     $(datetimepickerInputElement).after(html)
     displayCalendar(finalDate.month, finalDate.year)
@@ -616,7 +620,7 @@ function fillBodyHourPicker() {
     $('.datetimepicker-container .body').attr('class', 'body hourpicker')
     let html = `<div class="hour-container">`
     for (i = 1; i <= 12; i++) {
-        html += `<div> ${i}</div>`
+        html += `<div>${i}</div>`
     }
     html += `</div>`
     $('.datetimepicker-container .body.hourpicker').html(html);
@@ -636,7 +640,7 @@ function fillBodyMinutePicker() {
     $('.datetimepicker-container .body').attr('class', 'body minutepicker')
     let html = `<div class="minute-container"> `
     for (i = 0; i <= 59; i += 5) {
-        html += `<div> ${i}</div> `
+        html += `<div>${i}</div> `
     }
     html += `</div>`
     $('.datetimepicker-container .body.minutepicker').html(html);
