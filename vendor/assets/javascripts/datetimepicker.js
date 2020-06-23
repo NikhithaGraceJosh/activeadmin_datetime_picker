@@ -19,12 +19,17 @@ let time = date.toLocaleString('en-US', { hour: 'numeric', hour12: true }).split
 let finaltimeHour = time[0]
 let finaltimeMinute = date.getMinutes();
 let finaltimePeriod = time[1]
+let default_options = {
+    'min_date': -1,
+    'max_date': -1,
+    'format': '%dd-%mm-%yyyy %hh:%MM:%SS %P'
+};
 let datetimepicker_options;
 $(function () {
 
     //initialize datetimepicker options
     options = $('.ui-datetime-picker-wrapper > .ui-datetime-picker-input').attr('datetimepicker_options')
-    datetimepicker_options = $.parseJSON(options)
+    datetimepicker_options = { ...default_options, ...($.parseJSON(options)) }
 
     // give default values to the global variables depending on the value of the input field
     $.map($('.ui-datetime-picker-wrapper > .ui-datetime-picker-input'), function (d) {
@@ -68,11 +73,6 @@ $(function () {
         let min_date = new Date(datetimepicker_options['min_date'])
         let max_date = new Date(datetimepicker_options['max_date'])
         selected_month = parseInt($(this)[0].className)
-        if (selected_month > min_date.getMonth() && selected_month < max_date.getMonth()) {
-            //save the selected month value
-            finalDate.month = selected_month
-        }
-
         viewingDate.month = selected_month
 
         // display calendar
@@ -97,12 +97,6 @@ $(function () {
         // save the month and year
         let min_date = new Date(datetimepicker_options['min_date'])
         let max_date = new Date(datetimepicker_options['max_date'])
-        if (previous_month > min_date.getMonth() && previous_month < max_date.getMonth()) {
-            finalDate.month = previous_month
-        }
-        if (previous_year > min_date.getFullYear() && previous_year < max_date.getFullYear()) {
-            finalDate.year = previous_year
-        }
 
         viewingDate.month = previous_month
         viewingDate.year = previous_year
@@ -124,12 +118,6 @@ $(function () {
         //save the month and year
         let min_date = new Date(datetimepicker_options['min_date'])
         let max_date = new Date(datetimepicker_options['max_date'])
-        if (next_month >= min_date.getMonth() && next_month <= max_date.getMonth()) {
-            finalDate.month = next_month
-        }
-        if (next_year >= min_date.getFullYear() && next_year <= max_date.getFullYear()) {
-            finalDate.year = next_year
-        }
 
         viewingDate.month = next_month
         viewingDate.year = next_year
@@ -145,9 +133,6 @@ $(function () {
         //save the year
         let min_date = new Date(datetimepicker_options['min_date'])
         let max_date = new Date(datetimepicker_options['max_date'])
-        if (next_year >= min_date.getFullYear() && next_year <= max_date.getFullYear()) {
-            finalDate.year = next_year
-        }
 
         viewingDate.year = next_year
 
@@ -162,9 +147,6 @@ $(function () {
         //save the year
         let min_date = new Date(datetimepicker_options['min_date'])
         let max_date = new Date(datetimepicker_options['max_date'])
-        if (previous_year > min_date.getFullYear() && previous_year < max_date.getFullYear()) {
-            finalDate.year = previous_year
-        }
 
         viewingDate.year = previous_year
         // display calendar
@@ -186,9 +168,6 @@ $(function () {
         //saved the selected year
         let min_date = new Date(datetimepicker_options['min_date'])
         let max_date = new Date(datetimepicker_options['max_date'])
-        if (selected_year > min_date.getFullYear() && selected_year < max_date.getFullYear()) {
-            finalDate.year = selected_year
-        }
 
         viewingDate.year = selected_year
         //display calendar
@@ -320,6 +299,34 @@ $(function () {
         $('.datetimepicker-container .body.datepicker table td').removeClass('selected')
         $(this).addClass('selected')
         finalDate.date = date
+        let min_date = new Date(datetimepicker_options['min_date'])
+        let max_date = new Date(datetimepicker_options['max_date'])
+
+        if (datetimepicker_options["min_date"] != -1 && datetimepicker_options["max_date"] == -1) {
+            //only min date is present
+            if (viewingDate.year >= min_date.getFullYear()) {
+                finalDate.year = viewingDate.year
+            }
+            if (viewingDate.month >= min_date.getMonth()) {
+                finalDate.month = viewingDate.month
+            }
+        } else if (datetimepicker_options["max_date"] != -1 && datetimepicker_options["min_date"] == -1) {
+            //only max date is present
+            if (viewingDate.year <= max_date.getFullYear()) {
+                finalDate.year = viewingDate.year
+            }
+            if (viewingDate.month <= max_date.getMonth()) {
+                finalDate.month = viewingDate.month
+            }
+        } else if (datetimepicker_options["max_date"] != -1 && datetimepicker_options["min_date"] != -1) {
+            //both min date and max date are present
+            if (viewingDate.year >= min_date.getFullYear() && viewingDate.year <= max_date.getFullYear()) {
+                finalDate.year = viewingDate.year
+            }
+            if (viewingDate.month >= min_date.getMonth() && viewingDate.month <= max_date.getMonth()) {
+                finalDate.month = viewingDate.month
+            }
+        }
     })
 })
 
@@ -344,33 +351,40 @@ function initDateTimePicker(datetimepickerInputElement) {
 function displayCalendar(month, year) {
     let startingDayOfMonth = new Date(year, month, 1).getDay()
     let totalDaysInMonth = new Date(year, parseInt(month) + 1, 0).getDate()
-    let min_full_date = new Date(datetimepicker_options["min_date"])
-    let max_full_date = new Date(datetimepicker_options["max_date"])
+
     let min_date = -1
     let max_date = totalDaysInMonth + 1
     let disable_year = false
     let disable_month = false
-    if (year < min_full_date.getFullYear()) {
-        min_date = totalDaysInMonth + 1
-    } else if (min_full_date.getFullYear() == year && month < min_full_date.getMonth()) {
-        min_date = totalDaysInMonth + 1
-    } else if (min_full_date.getMonth() == month && min_full_date.getFullYear() == year) {
-        min_date = min_full_date.getDate()
+
+    if (datetimepicker_options["min_date"] != -1) {
+        let min_full_date = new Date(datetimepicker_options["min_date"])
+        if (year < min_full_date.getFullYear()) {
+            min_date = totalDaysInMonth + 1
+        } else if (min_full_date.getFullYear() == year && month < min_full_date.getMonth()) {
+            min_date = totalDaysInMonth + 1
+        } else if (min_full_date.getMonth() == month && min_full_date.getFullYear() == year) {
+            min_date = min_full_date.getDate()
+        }
     }
-    if (year > max_full_date.getFullYear()) {
-        // since the whole year is disabled and so are all the months
-        disable_year = true
-        disable_month = true
-        max_date = 0
-    } else if (max_full_date.getFullYear() == year && month > max_full_date.getMonth()) {
-        //since the whole month is disbaled, set the flag to true
-        disable_month = true
-        max_date = 0
-    } else if (max_full_date.getMonth() == month && max_full_date.getFullYear() == year) {
-        max_date = max_full_date.getDate()
+
+    if (datetimepicker_options["max_date"] != -1) {
+        let max_full_date = new Date(datetimepicker_options["max_date"])
+        if (year > max_full_date.getFullYear()) {
+            // since the whole year is disabled and so are all the months
+            disable_year = true
+            disable_month = true
+            max_date = 0
+        } else if (max_full_date.getFullYear() == year && month > max_full_date.getMonth()) {
+            //since the whole month is disbaled, set the flag to true
+            disable_month = true
+            max_date = 0
+        } else if (max_full_date.getMonth() == month && max_full_date.getFullYear() == year) {
+            max_date = max_full_date.getDate()
+        }
     }
     fillHeaderCalendar(month, year, disable_month, disable_year)
-    fillBodyCalendar(startingDayOfMonth, totalDaysInMonth, min_date, max_date)
+    fillBodyCalendar(month, year, startingDayOfMonth, totalDaysInMonth, min_date, max_date)
 }
 
 function fillHeaderCalendar(month, year, disable_month, disable_year) {
@@ -400,7 +414,7 @@ function fillHeaderCalendar(month, year, disable_month, disable_year) {
     $('.datetimepicker-container .header.datepicker').html(html)
 }
 
-function fillBodyCalendar(day, total_days, min_date, max_date) {
+function fillBodyCalendar(month, year, day, total_days, min_date, max_date) {
     let i = 1;
     let html = `<table>
                     <thead>
@@ -414,7 +428,7 @@ function fillBodyCalendar(day, total_days, min_date, max_date) {
                 <tr>`
     $.each(DAYS, function (index, value) {
         if (index >= day) {
-            if (parseInt(finalDate.date) == i) {
+            if (parseInt(finalDate.date) == i && parseInt(finalDate.month) == month && parseInt(finalDate.year == year)) {
                 if (i < min_date || i > max_date) {
                     html += `<td class="disabled">${i}</td>`
                 } else {
@@ -439,7 +453,7 @@ function fillBodyCalendar(day, total_days, min_date, max_date) {
         if ((x % 7 == 0) && (x != 0)) {
             html += `</tr><tr>`
         }
-        if (parseInt(finalDate.date) == i) {
+        if (parseInt(finalDate.date) == i && parseInt(finalDate.month) == month && parseInt(finalDate.year) == year) {
             if (i < min_date || i > max_date) {
                 html += `<td class="disabled">${i}</td>`
             } else {
