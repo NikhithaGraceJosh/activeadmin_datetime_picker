@@ -371,9 +371,12 @@ function formatDateTime(jsDateObject, dateObject, timeObject, format) {
                 else
                     return timeObject.hour
             case '%H':
-                return timeObject.hour
+                return jsDateObject.getHours()
             case '%HH':
-                return timeObject.hour
+                if (jsDateObject.getHours() < 10)
+                    return "0" + jsDateObject.getHours()
+                else
+                    return jsDateObject.getHours()
             case '%M':
                 return timeObject.minute
             case '%MM':
