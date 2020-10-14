@@ -543,6 +543,7 @@ function bindWidgetEvents() {
     this.widget.on('click', '.body.hourpicker .hour-container div', function (e) {
         //save the selected month value
         this.finalTime.hour = $(e.currentTarget).text()
+        this.updateDateObject()
 
         // display calendar
         this.displayTimePicker()
@@ -553,6 +554,7 @@ function bindWidgetEvents() {
     this.widget.on('click', '.body.minutepicker .minute-container div', function (e) {
         //save the selected month value
         this.finalTime.minute = $(e.currentTarget).text()
+        this.updateDateObject()
 
         // display calendar
         this.displayTimePicker()
@@ -569,7 +571,7 @@ function bindWidgetEvents() {
             this.finalTime.period = "AM"
             $('.datetimepicker-container .body.timepicker .toggle-am-pm').text("AM")
         }
-
+        this.updateDateObject()
         // display calendar
         // this.displayTimePicker()
 
@@ -589,5 +591,17 @@ function bindWidgetEvents() {
         this.finalDate.date = $(e.currentTarget).text()
         this.finalDate.year = this.viewingDate.year
         this.finalDate.month = this.viewingDate.month
+
+        this.updateDateObject()
     }.bind(this))
+    this.updateDateObject = function(){
+        //update date object
+        var hr24;
+        if(this.finalTime.period == "AM")
+            hr24 = this.finalTime.hour
+        else
+            hr24 = parseInt(this.finalTime.hour) + 12
+        
+        this.dateObject = new Date(this.finalDate.year, this.finalDate.month, this.finalDate.date, hr24, this.finalTime.minute )
+    }.bind(this)
 }
